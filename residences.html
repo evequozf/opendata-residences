@@ -1,0 +1,484 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+  <head>   
+     <meta http-equiv="X-UA-Compatible" content="IE=9">
+     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<title>Villes vivantes - villages fantômes - Logements occupés en permanence et logements partiellement vacants (1990-2000) - Florian Evéquoz</title>
+     
+<style>
+
+body {
+  padding-left:30px;
+  text-align:center;
+  font: 10px Helvetica, sans-serif;
+}
+
+body div {
+  text-align:left;
+}
+
+h3 {
+	text-align:center;
+}
+
+div#chartandlegend {
+	margin: 20px;
+	//border: 1px solid firebrick; //red
+	width: 90%;
+	padding: 5px;
+	background-color: #E9DED1;
+	//background-color: #E3D5C5; //original Tulp
+	//background-color: #F8ECC2;
+	//display:inline;
+}
+
+div#chart, div#legende {
+	display:inline-block;
+	vertical-align:top;
+}
+
+div#legende {
+	//border-left: 1px solid #EEE
+}
+
+div#breadcrumbs {
+	margin-left:-20px;
+}
+
+li {
+ list-style-type:none;
+ display:inline;
+ margin-right:10px;
+}
+
+.axis {
+  fill: #777;
+}
+
+.axis path,
+.axis line {
+  stroke: #777;
+  fill: none;
+  shape-rendering: crispEdges;
+}
+
+.axis path {
+	stroke: none;
+}
+
+.dot {
+  //stroke: #EEE;
+  stroke-width: 3px;
+}
+
+
+div.tooltip {   
+  position: absolute;           
+  text-align: left;
+  vertical-align: middle;                           
+  padding: 5px;             
+  font: 8px;        
+  background: white;   
+  border: 1px solid lightgray;      
+  pointer-events: none;   
+  box-shadow: 2px 2px 5px #AAAAAA;      
+}
+
+.tooltip .commune {
+  font-weight: bold;
+  font-size: 12px;
+  font-variant:caps;
+}
+
+.tooltip table {
+  margin:0px;
+  padding-left:0px;
+}
+
+#legende {
+	margin-left: 20px;
+	color: #777;
+	stroke: #777;
+}
+
+#legende svg.legende-color {
+	width: 50px;
+	height: 30px; 
+}
+
+#legende table {
+	//border: 1px solid;
+}
+
+#legende table th {
+	text-align:center;
+}
+
+#legend-size, #legende-proportion-fixed, #legende-proportion-dynamic {
+	width: 273px;
+	height:80px;
+}
+
+circle.small, circle.medium, circle.large {
+	fill: none;
+	stroke-width: 1px;
+}
+
+line.small, line.medium, line.large {
+	fill: none;
+	stroke-width: 1px;
+}
+
+text.small, text.medium, text.large {
+	text-anchor:end;
+	fill: #777;
+	stroke: none;
+}
+
+#legende-proportion-fixed, #legende-proportion-dynamic {
+	text-anchor:end;
+	fill: #777;
+	stroke: none;
+}
+
+#legende-proportion-fixed line, #legende-proportion-dynamic line {
+	stroke: #777;
+}
+
+
+</style>
+  </head> 
+  <body>
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <div>
+    <h1>Villes Vivantes, Villages Fantômes</h1>
+    <h2>Logements occupés en permanence et logements partiellement vacants, par communes (1990-2000)</h2>
+    
+    <div id="breadcrumbs">
+    </div>
+    
+    <div id="chartandlegend"> 
+    	<h3>
+    		Canton
+    		<select id="canton-select" onChange="javascript:changeCanton()">
+				<option value="Geneve" selected>Genève</option>
+				<option value="Vaud">Vaud</option>
+				<option value="Valais">Valais</option>
+			</select>
+			- Année
+    		<select id="year-select" onChange="javascript:changeYear()">
+				<option value="1990" selected>1990</option>
+				<option value="2000">2000</option>
+			</select>
+    	</h3>
+    	<div id="chart"></div> 
+		<div id="legende">
+			
+			<div>
+				<h4 class="legend-size-title"><!--<b>TAILLE</b>-->Nombre total de logements par habitant</h4>
+				<svg id="legend-size">
+					<circle class="small"/>
+					<circle class="medium"/>
+					<circle class="large"/>
+					<line class="small"/>
+					<line class="medium"/>
+					<line class="large""/>
+					<text class="small">0.5 logement par habitant</text>
+					<text class="medium">1 logement par habitant</text>
+					<text class="large">2 logements par habitant</text>
+				</svg>
+			</div>
+			
+			<div>
+			<h4><!--<b>REMPLISSAGE</b>-->Proportion de logements occupés et vacants</h4>
+			<svg id="legende-proportion-fixed">
+				<circle cx="40" cy="40" r="26" fill="#000" stroke="none" opacity=".3"/>
+				<circle cx="40" cy="40" r="13" fill="#000" stroke="none" opacity=".9"/>
+				<line x1="40" y1="40" x2="210" y2="40"/>
+				<line x1="40" y1="20" x2="210" y2="20"/>
+				<text x="210" y="38">Occupés en permanence</text>
+				<text x="210" y="18">Partiellement vacants</text>
+			</svg>
+			<svg id="legende-proportion-dynamic" style="display:none">
+			</svg>
+			</div>	
+		<!--<div>
+		<table>
+		<tr id="allcircle"></tr>
+		<tr>
+			<td><b>Occupés en permanence</b></td>
+			<td>100%</td><td>90%</td><td></td><td></td><td></td>
+			<td>50%</td><td></td><td></td><td></td><td></td><td>0%</td>
+		</tr>
+		<tr>
+			<td><em>Partiellement vacants</em></td>
+			<td>0%</td><td></td><td></td><td></td><td></td>
+			<td>50%</td><td></td><td></td><td></td><td>90%</td><td>100%</td>
+		</tr>
+		</table>
+		</div> -->
+		</div> <!-- div legende -->
+    </div>
+    
+    <h2>Qu'est-ce que c'est ?</h2>
+    <p>L'idée de cette visualisation fait suite à l'acceptation de la Lex Weber visant à interdire la construction de résidences secondaires dans les communes qui en compte plus de 20%. Mon idée dans cette visualisation est de représenter les "villages fantômes", ces communes dont la majorité des logements sont des résidences secondaires, vides la grande majorité du temps. Malheureusement les statistiques sont incomplètes et ne distinguent, en 1990 et 2000, que les résidences occupées en permanence ou temporairement vacantes. J'ai donc dû me contenter de ces chiffres, pour les cantons de Genève, de Vaud et du Valais. </p>
+    
+    <p>Dans cette visualisation, chaque bulle représente une commune du canton sélectionné. Les communes sont positionnées verticalement en fonction de leur population, et horizontalement en fonction du taux de logements partiellement vacants. Le diamètre de chaque bulle, tout comme sa couleur, sont fonction du nombre de logements par habitants. La partie centrale, opaque, représente les logements occupés en permanence, tandis que la partie extérieure, translucide ("fantôme") représente les logements partiellement vacants.</p>
+    
+    
+    <h2>On the visualization</h2>
+    <!-- <h3>Background</h3> -->
+    <p>Discovering the aesthetically wonderful Ghost Counties project by <a href=http://www.janwillemtulp.com/>Jan Willem Tulp</a> made me think about the recent "Lex Weber" vote in Switzerland, that was accepted by the people in March 2013. The Lex Weber basically limits the building of new secondary residences in Swiss communes by setting an upper limit: in communes where the proportion of secondary residences exceeds 20% of the total number of residences, it is forbidden to build new secondary residences. In the campaign, Alpine cantons were presented as having a high proportion of secondary residences and being the hostage of real estate developers who continued building such residences without worrying about the nature and landscape. What the proportion of secondary residences actually was in the different communes was something barely discussed in the campaign. So I was wondering if I could find some statistics and put them in perspective. The vote reflected the worries of alpine cantons losing their touristic development opportunities, as there was a clear separation between alpine cantons (mainly refusing the Lex Weber) and urban cantons (accepting Lex Weber).</p>
+    <p>
+    This visualization is of a more artistic than analytical nature. Concentric bubbles are not well suited to precise comparisons, and transient animations (when changing years) do not convey precisely the details of change over time. However, interesting trends can still be extracted from an otherwise hard to analyse data, and the big picture (i.e. the difference between urban and alpine regions) is clearly visible.
+    </p>
+    <!--
+    <h3>The data</h3>
+    <p>to do
+    </p>
+    <h3>The viz</h3>
+    <p>to do
+    </p>
+    <p>My second attempt with D3.</p>  -->
+    <p>&nbsp;</p>
+    <p style="font-size:8pt;color:lightgray;">Florian Evéquoz, 2013 - inspired from the Ghost Counties by <a href=http://www.janwillemtulp.com/>Jan Willem Tulp</a>. The title is shamelessly inspired by <a href="http://www.villevivante.ch/">Ville Vivante</a>, a project by <a href="http://interactivethings.com/">Interactive Things</a><br/>Données : Office Fédéral de la Statistique, OFS</p>
+    </div>
+    <script>
+
+var margin = {top: 20, right: 20, bottom: 30, left: 60},
+    width = 810 - margin.left - margin.right,
+    height = 460 - margin.top - margin.bottom;
+
+var x = d3.scale.linear()
+    .range([0, width]);
+
+var y = d3.scale.log()
+    .range([height, 0]);
+    
+var r = d3.scale.linear()   //scale pour le rayon du cercle
+	.range([0,14]);
+
+//colors from Tulp
+var color = d3.scale.pow().exponent(.3)
+	.range([d3.rgb(142,42,42),/*d3.rgb(74,149,145)*/d3.rgb(41,142,142)])
+	.interpolate(d3.interpolateLab); //interpolate in a better-for-the-eye color space
+
+//format 1000 as 1'000
+var formatMil = function(d) {
+	return d3.format(",d")(d).replace(/,/g,"'");
+}
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom")
+    .tickFormat(d3.format("1%"));
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left")
+    .tickFormat(function (d) {
+        return y.tickFormat(6,formatMil)(d) // n'afficher que les labels 10^n
+	});
+
+//tooltip
+var ttip = d3.select("body").append("div")   
+    .attr("class", "tooltip")               
+    .style("opacity", 0);
+
+//Commune;res.princ.;res.sec.;pop;%res.sec.;res.sec/pop
+var commune = function(d) { return d['Commune']; };
+var resprinc = function(d,y) { return +d['res.princ.'+y]; };
+var ressec = function(d,y) { return +d['res.sec.'+y]; };
+var pop = function(d,y) { return +d['pop.'+y]; };
+var ressecpercent = function(d,y) { return +d['%res.sec.'+y]; };
+var ressecpop = function(d,y) { return +d['res.sec/pop.'+y]; };
+
+var thedata; //global variable holding the dataset
+var svg; //define outside of function for debug. Contains main chart
+
+// load dataset
+loadDataset('donnees-geneve-1990-2000.csv','Canton de Genève',1990);
+
+//set legend "size"	
+var lSize = d3.select("#legend-size");
+function makeLegend(style, radius) {
+	lSize.selectAll("circle").attr("cx",40);
+	lSize.select("circle."+style)
+		.attr("r", r(radius))
+		.attr("cy", 10+r(radius));
+	lSize.selectAll("line").attr("x1",40).attr("x2",210);
+	lSize.select("line."+style)
+		.attr("y1",10+2*r(radius))
+		.attr("y2",10+2*r(radius));
+	lSize.selectAll("text").attr("x",210);
+	lSize.select("text."+style)
+		.attr("y",8+2*r(radius));
+}
+makeLegend("small",0.5);
+makeLegend("medium",1);
+makeLegend("large",2);
+
+
+function changeCanton() {
+	var e = document.getElementById('canton-select');
+	var canton = e.options[e.selectedIndex].value;
+	e = document.getElementById('year-select');
+	var year = e.options[e.selectedIndex].value; 
+	//console.log(year);
+	if(canton=='Geneve')
+		loadDataset('donnees-geneve-1990-2000.csv','Canton de Genève',year)
+	else if(canton=='Vaud')
+		loadDataset('donnees-vaud-1990-2000.csv','Canton de Vaud',year);
+	else if(canton=='Valais')
+		loadDataset('donnees-valais-1990-2000.csv','Canton du Valais',year);
+}
+
+function changeYear() {
+	var e = document.getElementById('year-select');
+	var year = e.options[e.selectedIndex].value;
+	anime(year);
+}
+
+
+function loadDataset(dataset, canton, year) {
+	d3.csv(dataset, function(data) {
+		
+		// clean the CSV file -> remove lines with 0 or NaN or null (do NOT use foreach !)
+		//var count = 0;
+		for (var i = 0; i < data.length; ++i) {
+			var d = data[i];
+			//console.log(commune(d) + " " +ressecpercent(d,1990)); //for debug
+			//TODO : de-hardcode dates !!!
+			if (d==null || isNaN(ressecpercent(d,1990)) || isNaN(ressecpercent(d,2000))) {
+				data.splice(i--, 1);
+				//count++;
+			}
+		}
+		
+		thedata = data; //set global variable (used in anime function)
+		
+		//remove the possibly existing chart
+		d3.select("#chart svg").remove();
+		svg = d3.select("#chart").append("svg")
+    		.attr("width", width + margin.left + margin.right)
+    		.attr("height", height + margin.top + margin.bottom)
+  			.append("g")
+    		.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+		//domain des échelles : quelles sont les valeurs d'entrée admises (intervalle) -> fixe pour les axes pour comparaisons intercantonales
+		x.domain([0.0,1.0]).nice();
+		y.domain([1,1000000]).nice().clamp(true); //log 0 -> problèmes !
+		r.domain([0.0,1.0]).nice(); //jusqu'à un ratio ressec/pop de 1, c'est dans la range, après c'est au delà ! (pour comparer plusieurs cantons)
+		//fixed domain !
+		color.domain([0.0,2.0]).nice().clamp(true);
+		
+	  //axes
+	  svg.append("g")
+		  .attr("class", "axis")
+		  .attr("transform", "translate(0," + height + ")")
+		  .call(xAxis)
+		.append("text")
+		  .attr("class", "label")
+		  .attr("x", width)
+		  .attr("y", -6)
+		  .style("text-anchor", "end")
+		  .text("% logements partiellement vacants");
+	
+	  svg.append("g")
+		  .attr("class", "axis")
+		  .call(yAxis)
+		.append("text")
+		  .attr("class", "label")
+		  .attr("transform", "rotate(-90)")
+		  .attr("y", 6)
+		  .attr("dy", ".71em")
+		  .style("text-anchor", "end")
+		  .text("Population") ;
+	
+	  //res.princ.
+	  svg.selectAll(".dot-intern")
+		   .data(data)
+		.enter().append("circle")
+		  .attr("class", "dot-intern");
+	  
+	  //res.sec.
+	  svg.selectAll(".dot")
+		  .data(data)
+		.enter().append("circle")
+		  .attr("class", "dot");
+	  
+	  anime(year,1); //will actually set the attributes of those circles, animation of 1ms
+		
+	})
+};
+
+
+function anime(year,duration) {
+	if(!duration) var duration = 1500;
+	d3.select("svg");
+		
+	//synchronize 2 independent selections of elements in the same transition, using each() !
+	d3.transition().duration(duration).each(function() {
+  		svg.selectAll(".dot-intern").data(thedata)
+  			.transition()
+  			.attr("r", function(d) { return r(resprinc(d,year)/pop(d,year)); })
+		  	.attr("cx", function(d) { return x(ressecpercent(d,year)); })
+		  	.attr("cy", function(d) { return y(pop(d,year)); })
+		  	.style("fill", function(d) { return color(ressecpop(d,year)); })
+		  	.style("opacity", ".9");
+		svg.selectAll(".dot").data(thedata)
+			.transition()
+			.attr("r", function(d) { return r(resprinc(d,year)/pop(d,year) + ressecpop(d,year)); })
+		  	.attr("cx", function(d) { return x(ressecpercent(d,year)); })
+		  	.attr("cy", function(d) { return y(pop(d,year)); })
+		  	.style("fill", function(d) { return color(ressecpop(d,year)); })
+		  	.style("opacity", ".3")
+	});
+	
+	svg.selectAll(".dot")
+		  .data(thedata)
+		  	//warning : do not put "on" inside a transition, it will not work
+		  .on("mouseover", function(d) { 
+				//d3.select(this).style("fill", "black"); 
+				d3.select(this).style("stroke", "#000"); 
+				ttip.transition()        
+					.duration(100)      
+					.style("opacity", 1);      
+				ttip.html('<div class="commune">'+commune(d)+"</div>"
+						+"<table><tr><td>Population</td><td>"
+							+formatMil(pop(d,year))+"</td></tr>"
+						+"<tr><td>Logements</td><td>"
+							+formatMil(resprinc(d,year)+ressec(d,year))
+						+"<tr><td style=\"padding-left:2em;\">dont occupés en permanence</td><td>"
+							+formatMil(resprinc(d,year))+"  ("
+							+d3.format(".1%")(1-ressecpercent(d,year))+")"
+						+"<tr><td style=\"padding-left:2em;\">dont partiellement vacants</td><td>"
+							+formatMil(ressec(d,year))+"  ("
+							+d3.format(".1%")(ressecpercent(d,year))+")"
+						+"</td></tr><table>"
+						)
+					.style("left", (d3.event.pageX + 10) + "px")     
+					.style("top", (d3.event.pageY - 40) + "px");   
+			})
+		  .on("mouseout",  function(d) { 
+				//d3.select(this).style("fill", function(d) { return color(ressecpop(d,year)); }); 
+				d3.select(this).style("stroke", "none"); 
+				ttip.transition()        
+					.duration(200)      
+					.style("opacity", 0);   
+			}); 
+};
+
+/* 
+environ 4h de travail pour générer visualisation statique. 
+Peut-être 2-3h sur les données evf 17.12.2013
++ env. 2h pour ajouts de datasets evf 18.12.2013
++ env. 2h pour ajouts dataset 1990-2000, animations et cosmétique evf 18.12.2013
++ env. 3h 19.12 pour changer couleurs et cosmétique, look ghost counties avec res.princ. et début légende
++ env. 3h pour finaliser la légende
++ env. 1h de bricolage sur la légende statique
++ env. 1h pour ajouter contrôle dropdown pour cantons et année
+*/
+    </script>
+  </body>
+</html>
