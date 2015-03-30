@@ -26,7 +26,8 @@ div#chartandlegend {
 	//border: 1px solid firebrick; //red
 	width: 90%;
 	padding: 5px;
-	background-color: #E9DED1;
+	background-color:#EDEBE9; //un joli gris papier
+	//background-color: #E9DED1; //inspiré par Tulp
 	//background-color: #E3D5C5; //original Tulp
 	//background-color: #F8ECC2;
 	//display:inline;
@@ -230,8 +231,24 @@ text.small, text.medium, text.large {
     <!-- <h3>Background</h3> -->
     <p>Discovering the aesthetically wonderful Ghost Counties project by <a href=http://www.janwillemtulp.com/>Jan Willem Tulp</a> made me think about the recent "Lex Weber" vote in Switzerland, that was accepted by the people in March 2013. The Lex Weber basically limits the building of new secondary residences in Swiss communes by setting an upper limit: in communes where the proportion of secondary residences exceeds 20% of the total number of residences, it is forbidden to build new secondary residences. In the campaign, Alpine cantons were presented as having a high proportion of secondary residences and being the hostage of real estate developers who continued building such residences without worrying about the nature and landscape. What the proportion of secondary residences actually was in the different communes was something barely discussed in the campaign. So I was wondering if I could find some statistics and put them in perspective. The vote reflected the worries of alpine cantons losing their touristic development opportunities, as there was a clear separation between alpine cantons (mainly refusing the Lex Weber) and urban cantons (accepting Lex Weber).</p>
     <p>
-    This visualization is of a more artistic than analytical nature. Concentric bubbles are not well suited to precise comparisons, and transient animations (when changing years) do not convey precisely the details of change over time. However, interesting trends can still be extracted from an otherwise hard to analyse data, and the big picture (i.e. the difference between urban and alpine regions) is clearly visible.
-    </p>
+    This visualization is of a more artistic than analytical nature. Concentric bubbles are not well suited to precise comparisons, and transient animations (when changing years) do not convey precisely the details of change over time. However, interesting trends can still be extracted from an otherwise hard to analyse data, and the big picture (i.e. the difference between urban and alpine regions) is clearly visible. 
+    <br>The proportion of primary and secondary residences is mapped to the bubbles diameter. This is normally avoided, because it is generally admitted that we visually compare areas rather than circle diameters. However, in this visualisation, the bubbles actually show 2 correlated proportions, 2 slices of the same pie. If the proportion was mapped to the area, it would be very difficult to compare the area of the inner circle and the area around it that is in fact a ring, or dougnut. For example, imagine a 50-50 proportion. If the radius of the inner circle is 10, then its area is ~314 (pi*r^2). The area of the doughnut around should also be 314, therefore the doughnut outer-radius should be 14. This is represented in the image below.
+</p>
+<svg width=50 height=50>
+<circle cy="25" cx="25" r="14" style="opacity: 1; fill: rgb(128,128,128); stroke: none;"></circle>
+<circle cy="25" cx="25" r="10" style="opacity: 1; fill: black; stroke: none;"></circle>
+</svg>
+<p>
+Can you tell the area of the doughnut is the same as the area of the inner circle? I can't unless I pull out my ruler and compute the areas manually. Instead, when the proportion is mapped to the diameter, I think the situation gets better.
+</p>
+<svg width=50 height=50>
+<circle cy="25" cx="25" r="20" style="opacity: 1; fill: rgb(128,128,128); stroke: none;"></circle>
+<circle cy="25" cx="25" r="10" style="opacity: 1; fill: black; stroke: none;"></circle>
+</svg>
+<p>
+The main problem remains that one cannot compare effectively area of different shapes. But if we want to keep this visual representation, however it is not a very effective way (from an analytical / perceptual perspective) to represent the data, I think mapping the proportion to the diameter gives a better overall impression. 
+</p>
+
     <!--
     <h3>The data</h3>
     <p>to do
@@ -255,8 +272,8 @@ var x = d3.scale.linear()
 var y = d3.scale.log()
     .range([height, 0]);
     
-var r = d3.scale.linear()   //scale pour le rayon du cercle
-	.range([0,14]);
+var r = d3.scale.linear()   //scale pour le rayon du cercle -> sqrt pour que ça soit l'aire du cercle qui est proportionnelle à la valeur, et non le rayon //TODO : fumeux, voir les valeurs...
+	.range([0,14]); //[0,14] si linéaire [0,16] si sqrt
 
 //colors from Tulp
 var color = d3.scale.pow().exponent(.3)
@@ -367,7 +384,7 @@ function loadDataset(dataset, canton, year) {
 
 		//domain des échelles : quelles sont les valeurs d'entrée admises (intervalle) -> fixe pour les axes pour comparaisons intercantonales
 		x.domain([0.0,1.0]).nice();
-		y.domain([1,1000000]).nice().clamp(true); //log 0 -> problèmes !
+		y.domain([1,1000000]).nice().clamp(true); //pas 0 car log 0 -> problèmes !
 		r.domain([0.0,1.0]).nice(); //jusqu'à un ratio ressec/pop de 1, c'est dans la range, après c'est au delà ! (pour comparer plusieurs cantons)
 		//fixed domain !
 		color.domain([0.0,2.0]).nice().clamp(true);
@@ -419,24 +436,25 @@ function anime(year,duration) {
 		
 	//synchronize 2 independent selections of elements in the same transition, using each() !
 	d3.transition().duration(duration).each(function() {
-  		svg.selectAll(".dot-intern").data(thedata)
+  		
+		svg.selectAll(".dot")//.data(thedata)
+			.transition()
+			.attr("r", function(d) { return r(resprinc(d,year)/pop(d,year) + ressecpop(d,year)); })
+		  	.attr("cx", function(d) { return x(ressecpercent(d,year)); })
+		  	.attr("cy", function(d) { return y(pop(d,year)); })
+		  	.style("fill", function(d) { return color(ressecpop(d,year)); })
+		  	.style("opacity", ".3");
+		svg.selectAll(".dot-intern")//.data(thedata)
   			.transition()
   			.attr("r", function(d) { return r(resprinc(d,year)/pop(d,year)); })
 		  	.attr("cx", function(d) { return x(ressecpercent(d,year)); })
 		  	.attr("cy", function(d) { return y(pop(d,year)); })
 		  	.style("fill", function(d) { return color(ressecpop(d,year)); })
 		  	.style("opacity", ".9");
-		svg.selectAll(".dot").data(thedata)
-			.transition()
-			.attr("r", function(d) { return r(resprinc(d,year)/pop(d,year) + ressecpop(d,year)); })
-		  	.attr("cx", function(d) { return x(ressecpercent(d,year)); })
-		  	.attr("cy", function(d) { return y(pop(d,year)); })
-		  	.style("fill", function(d) { return color(ressecpop(d,year)); })
-		  	.style("opacity", ".3")
 	});
 	
 	svg.selectAll(".dot")
-		  .data(thedata)
+		  //.data(thedata)
 		  	//warning : do not put "on" inside a transition, it will not work
 		  .on("mouseover", function(d) { 
 				//d3.select(this).style("fill", "black"); 
